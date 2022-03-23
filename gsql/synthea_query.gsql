@@ -1,0 +1,368 @@
+USE GRAPH Synthea
+
+#CREATE QUERY ClosenessCentralityExample() FOR GRAPH Synthea { 
+#	SumAccum<DOUBLE> @ccScore;
+#	AvgAccum @avgDistance;
+#	AvgAccum @@avgCCScore;
+#	MaxAccum<DOUBLE> @@maxScore;
+#	MinAccum<DOUBLE> @@minScore;
+#	SetAccum<VERTEX<Location>> @@organizationLocations;
+#
+#  	organizations = {Organization.*};
+#	
+#	#Score the individual vertices
+#	orgLocations = SELECT l FROM organizations-( organizationLocatedAt:e )->Location:l 
+#	               ACCUM @@organizationLocations += l
+#	               POST-ACCUM 
+#	                 FOREACH u IN @@organizationLocations DO
+#	                    IF u != l THEN
+#	                        l.@avgDistance += HaversineDistance(l, u)
+#	                        #l.@avgDistance += EuclideanDistance(l, u)
+#	                        #l.@avgDistance += ManhattanDistance(l, u)
+#	                    END
+#	                 END;
+#
+#	orgLocations = SELECT l FROM orgLocations:l ACCUM l.@ccScore = 1/l.@avgDistance POST-ACCUM @@maxScore += l.@ccScore, @@minScore += l.@ccScore, @@avgCCScore += l.@ccScore;
+#
+#	organizations = SELECT o FROM orgLocations:l-(:e)->Organization:o ACCUM o.@avgDistance = l.@avgDistance, o.@ccScore = l.@ccScore;
+#	maxScore = SELECT o FROM organizations:o WHERE abs(o.@ccScore - @@maxScore) <= 0.00001;  
+#	minScore = SELECT o FROM organizations:o WHERE abs(o.@ccScore - @@minScore) <= 0.00001;
+#
+#	PRINT organizations;
+#	PRINT @@maxScore;
+#	PRINT maxScore;
+#	PRINT @@minScore;
+#	PRINT minScore;
+#}
+
+
+
+CREATE QUERY Exercise3Answers() FOR GRAPH Synthea { 
+  
+	/* Initialize Set*/ 
+  patients = {Patient.*};
+	
+	/*How many patient vertices are there?*/
+	PRINT patients.size();
+	
+	/*What is the name of the patient with SSN, “999-37-6355”?*/
+	tmp = SELECT p FROM patients:p WHERE p.SSN == "999-37-6355";
+	PRINT "What is the name of the patient with SSN, 999-37-6355'? " + tmp.FirstName + " " + tmp.LastName;
+	
+	/*What is the ethnicity of the patient with passport, “X55997743X”?*/
+	tmp = SELECT p FROM patients:p WHERE p.Passport == "X55997743X";
+	PRINT "What is the ethnicity of the patient with passport, 'X55997743X'?" + tmp.Ethnicity;
+	
+	/*What is the date of birth of the patient with DL, “S99915145”?*/
+	tmp = SELECT p FROM patients:p WHERE p.DL == "S99915145";
+	PRINT "What is the date of birth of the patient with DL, 'S99915145'?" + datetime_format(tmp.DateOfBirth, "%m/%d/%Y");
+}
+
+CREATE QUERY PatientQueryExample(String gender) FOR GRAPH Synthea RETURNS (INT){
+  #Begin by initializing the set of all patients
+  patients = {Patient.*};
+  #Print the number of Patient Vertices
+  PRINT patients.size();
+  #Get the number of patients for the given gender
+  paramGenderPatients = SELECT p FROM patients:p WHERE patients.Gender == gender;
+  #Filter the list down to deceased patients of that gender
+  deceasedGenderPatients = SELECT p FROM paramGenderPatients:p WHERE p.DateOfDeath != to_datetime("2999-12-31 00:00:00");
+  PRINT deceasedGenderPatients.LastName + ", " + deceasedGenderPatients.FirstName + datetime_format(deceasedGenderPatients.DateOfDeath, " died on %m/%d/%Y at %H:%M:%S.");
+  #Return the number of deceased patients
+  RETURN deceasedGenderPatients.size();
+}
+
+CREATE QUERY VertexDegreeExample(INT upperbound) FOR GRAPH Synthea { 
+	GroupByAccum<VERTEX<Patient> p, STRING name, SumAccum<INT> visitCount> @@patientVisit;
+	MinAccum<INT> @@fewestVisits;
+	MaxAccum<INT> @@mostVisits;
+	AvgAccum @@avgVisits;
+	
+        patients = {Patient.*};
+        tmp = SELECT
+	        p 
+        FROM patients:p - (patientVisit:e) -> Visit:v
+        ACCUM @@patientVisit += (p, p.FirstName + " " + p.LastName -> p.outdegree(e.type)),
+	           @@fewestVisits += p.outdegree(e.type),
+	           @@mostVisits += p.outdegree(e.type),
+	           @@avgVisits += p.outdegree(e.type);
+  
+	FOREACH patient IN @@patientVisit DO
+	   PRINT patient.name + " had " + to_string(patient.visitCount) + " visits.";
+	END;
+	
+	FOREACH patient IN @@patientVisit DO
+	   IF patient.visitCount <= upperbound THEN 
+	      PRINT patient.name + " had " + to_string(patient.visitCount) + " visits.";
+	   END;
+	END;
+	
+	PRINT "Most Visits:" + to_string(@@mostVisits) + 
+	      " Fewest Visits:" + to_string(@@fewestVisits) + 
+	      " Avg Visits:" + to_string(@@avgVisits);
+}
+
+
+
+
+
+INSTALL QUERY PatientQueryExample
+
+INSTALL QUERY VertexDegreeExample
+
+INSTALL QUERY Exercise3Answers
+
+
+CREATE QUERY PatientQueryExample(String gender) FOR GRAPH Synthea RETURNS (INT){
+  #Begin by initializing the set of all patients
+  patients = {Patient.*};
+  #Print the number of Patient Vertices
+  PRINT patients.size();
+  #Get the number of patients for the given gender
+  paramGenderPatients = SELECT p FROM patients:p WHERE patients.Gender == gender;
+  #Filter the list down to deceased patients of that gender
+  deceasedGenderPatients = SELECT p FROM paramGenderPatients:p WHERE p.DateOfDeath != to_datetime("2999-12-31 00:00:00");
+  PRINT deceasedGenderPatients.LastName + ", " + deceasedGenderPatients.FirstName + datetime_format(deceasedGenderPatients.DateOfDeath, " died on %m/%d/%Y at %H:%M:%S.");
+  #Return the number of deceased patients
+  RETURN deceasedGenderPatients.size();
+}
+
+
+
+
+CREATE QUERY PatientsWhoseLastNameBeginsWithL() FOR GRAPH Synthea {
+  #Begin by initializing the set of all patients
+  patientList = {Patient.*};
+  filteredPatientList = SELECT p FROM patientList:p WHERE upper(p.LastName) LIKE "L%";
+  PRINT filteredPatientList.size();
+}
+
+
+
+CREATE QUERY PatientVisitsByDate(DATETIME dateToCheck) FOR GRAPH Synthea { 
+	visits = {Visit.*};
+	patients = SELECT 
+	               p 
+	           FROM visits -(patientVisit:e)-> Patient:p 
+	           WHERE year(visits.Started) == year(dateToCheck) 
+	           AND month(visits.Started) == month(dateToCheck) 
+	           AND day(visits.Started) == day(dateToCheck);
+	PRINT "There were " + to_string(patients.size()) + datetime_format(dateToCheck, " visits on %m/%d/%Y.");
+	PRINT patients.FirstName + " " + patients.LastName + datetime_format(dateToCheck, "had a visit on %m/%d/%Y.");
+}
+
+
+
+CREATE QUERY PatientVisitsByProvider(STRING providerName) FOR GRAPH Synthea {
+  #Define an accumulator
+  SetAccum<VERTEX<Patient>> @@patientList;
+  MapAccum<VERTEX<Patient>, INT> @@patientVisits;
+  #Start with Provider
+  providers = {Provider.*};
+  #Find all visits for that Provider
+  visits = SELECT 
+	      v 
+	   FROM providers:p-(providerVisit:e)->Visit:v
+           WHERE p.Name == providerName;
+  #Display how many total visits that provider had
+  PRINT visits.size();
+  #Accumulate a set of patients, declaring as set will not permit duplicates
+  patients = SELECT 
+	            p 
+	     FROM visits:v-(patientSeen:e)->Patient:p
+	     ACCUM  @@patientList += p, @@patientVisits += ( p -> 1);
+   #Iterate through set printing out relevant information 
+   FOREACH patient in @@patientList DO
+     PRINT patient.FirstName + " " + patient.LastName + " had " + to_string(  @@patientVisits.get(patient) ) + " visits.";
+   END;
+}
+
+
+
+CREATE QUERY VertexDegreeExample(INT upperbound) FOR GRAPH Synthea { 
+	GroupByAccum<VERTEX<Patient> p, STRING name, SumAccum<INT> visitCount> @@patientVisit;
+	MinAccum<INT> @@fewestVisits;
+	MaxAccum<INT> @@mostVisits;
+	AvgAccum @@avgVisits;
+	
+  patients = {Patient.*};
+  tmp = SELECT
+	        p 
+       FROM patients:p - (patientVisit:e) -> Visit:v
+       ACCUM @@patientVisit += (p, p.FirstName + " " + p.LastName -> p.outdegree(e.type)),
+	           @@fewestVisits += p.outdegree(e.type),
+	           @@mostVisits += p.outdegree(e.type),
+	           @@avgVisits += p.outdegree(e.type);
+  
+	FOREACH patient IN @@patientVisit DO
+	   PRINT patient.name + " had " + to_string(patient.visitCount) + " visits.";
+	END;
+	
+	FOREACH patient IN @@patientVisit DO
+	   IF patient.visitCount <= upperbound THEN 
+	      PRINT patient.name + " had " + to_string(patient.visitCount) + " visits.";
+	   END;
+	END;
+	
+	PRINT "Most Visits:" + to_string(@@mostVisits) + 
+	      " Fewest Visits:" + to_string(@@fewestVisits) + 
+	      " Avg Visits:" + to_string(@@avgVisits);
+}
+
+CREATE QUERY PatientWithVisitsBetween(INT lowerbound, INT upperbound) FOR GRAPH Synthea { 
+  GroupByAccum<VERTEX<Patient> p, STRING name, SumAccum<INT> visitCount> @@patientVisit;
+  INT patientsMatchingCriteria = 0;
+	
+  patients = {Patient.*};
+  tmp = SELECT
+                p
+        FROM patients:p - (patientVisit:e) -> Visit:v
+        ACCUM @@patientVisit += (p, p.FirstName + " " + p.LastName -> p.outdegree(e.type));
+
+        FOREACH patient IN @@patientVisit DO
+           IF lowerbound <= patient.visitCount AND patient.visitCount <= upperbound THEN
+              PRINT patient.name + " had " + to_string(patient.visitCount) + " visits.";
+	            patientsMatchingCriteria = patientsMatchingCriteria + 1;
+           END;
+        END;
+	
+	     PRINT "There were " + to_string(patientsMatchingCriteria) + " patients having " + to_string(lowerbound) + " to " + to_string(upperbound) + " visits.";
+}
+
+INSTALL QUERY Exercise3Answers
+
+INSTALL QUERY PatientQueryExample
+
+INSTALL QUERY PatientsWhoseLastNameBeginsWithL
+
+INSTALL QUERY PatientVisitsByDate
+
+INSTALL QUERY PatientVisitsByProvider
+
+INSTALL QUERY VertexDegreeExample
+
+INSTALL QUERY PatientWithVisitsBetween
+
+
+CREATE QUERY HaversineDistance(Vertex<Location> origin, Vertex<Location> destination) FOR GRAPH Synthea RETURNS (DOUBLE){ 
+	DOUBLE a;
+	DOUBLE PI = 3.14159; #PI
+	DOUBLE DEG = 180.0; 
+	DOUBLE R = 3961.0;  #Radius of the Earth in miles 
+	DOUBLE distance;
+	
+	a = pow( sin( (origin.Latitude - destination.Latitude) * (PI/DEG) / 2.0), 2) 
+	  + cos(origin.Latitude * (PI/DEG)) * cos(destination.Latitude * (PI/DEG)) 
+	  * pow( sin( (origin.Longitude - destination.Longitude)*(PI/DEG) / 2 ), 2);
+	distance = R * 2 * atan2(sqrt(a), sqrt(1-a));
+ 	
+	RETURN distance;
+}
+
+CREATE QUERY PatientsWithinDistanceOfOrganization(STRING nameOfOrganization, DOUBLE withinDistance) FOR GRAPH Synthea {
+        SetAccum<VERTEX<Patient>> @@patientsWithinDistance;
+	SetAccum<VERTEX<Patient>> @@patientKeySet;
+	SetAccum<VERTEX<Provider>> @@providersAtOrg;
+	SetAccum<VERTEX<Location>> @@orgLocations;
+	MapAccum<VERTEX<Patient>, DOUBLE> @@patientDistances;
+	SetAccum<VERTEX<Location>> @@locationList;
+	
+	orgList = {Organization.*};
+	org = SELECT 
+	         o 
+	      FROM orgList:o-(employs:e)->Provider:p 
+	      WHERE orgList.Name == nameOfOrganization
+	      ACCUM @@providersAtOrg += p;
+	PRINT org;
+	
+	orgLocation = SELECT l FROM org:o-(organizationLocatedAt:e)->Location:l ACCUM @@orgLocations += l;
+	FOREACH location IN @@orgLocations DO
+	PRINT location;
+	      providerSet = @@providersAtOrg;
+	      visitList = SELECT v FROM providerSet:p-(providerVisit:e)->Visit:v;
+	      patientList = SELECT pa FROM visitList:v-(patientSeen:e)->Patient:pa;
+	      patientLocationList = SELECT l FROM patientList:pa-(patientLocatedAt:e)->Location:l ACCUM @@patientDistances += (pa -> HaversineDistance( location , l) ), @@patientKeySet += pa, @@locationList += l;
+	END;
+	
+	FOREACH patient IN @@patientKeySet DO
+	     IF @@patientDistances.get(patient) <= withinDistance THEN
+	         @@patientsWithinDistance += patient;
+	     END;
+	END;
+	
+	FOREACH patient IN @@patientsWithinDistance DO
+           PRINT patient.FirstName + " " + patient.LastName + " is located " + to_string(@@patientDistances.get(patient)) + " miles from " + nameOfOrganization;
+	END;
+	PRINT @@patientsWithinDistance;
+}
+
+CREATE QUERY PatientLastNameRMinMaxDistance() FOR GRAPH Synthea {
+	SetAccum<VERTEX<Location>> @@orgLocations;
+	SetAccum<VERTEX<Location>> @@patientLocations;
+	MinAccum<DOUBLE> @@minDistance;
+	MaxAccum<DOUBLE> @@maxDistance;
+	
+  orgs = {Organization.*};
+	organizationLocationList = SELECT l FROM orgs:o-(organizationLocatedAt)->Location:l ACCUM @@orgLocations += l;
+	patients = {Patient.*};
+	patientLocationList = SELECT l FROM patients:p-(patientLocatedAt)->Location:l 
+	                      WHERE upper(p.FirstName) LIKE "R%" ACCUM @@patientLocations += l;
+	
+	PRINT patientLocationList;
+	
+	FOREACH orgLocation IN @@orgLocations DO
+     patientList = SELECT l FROM patientLocationList:l 
+	         ACCUM @@minDistance += HaversineDistance(l, orgLocation), 
+	               @@maxDistance += HaversineDistance(l, orgLocation);
+	END;
+	
+	PRINT "Minimum distance between Patient and Organization " + to_string(@@minDistance);
+	PRINT "Maximum distance between Patient and Organization " + to_string(@@maxDistance);
+}
+
+
+
+CREATE QUERY Exercise6Query() FOR GRAPH Synthea {
+  MapAccum<STRING, VERTEX<Location>> @@patientLocationMap;
+	MapAccum<STRING, VERTEX<Location>> @@organizationLocationMap;
+	
+  patients = {Patient.*};
+	organizations = {Organization.*};
+	
+	patientList = SELECT p FROM patients:p-( patientLocatedAt:e )->Location:l 
+	              WHERE p.FirstName + " " + p.LastName IN ("Leslie90 Ritchie586", "Kendall673 Kuhic920", "Siobhan540 Konopelski743") 
+	              ACCUM @@patientLocationMap +=  ( p.FirstName + " " + p.LastName -> l ) ;
+	PRINT patientList;
+	
+	organizationList =  SELECT l FROM organizations:o-( organizationLocatedAt:e)->Location:l 
+	                    WHERE o.Name == upper("Newton-Wellesley Hospital") 
+	                    ACCUM @@organizationLocationMap += (o.Name -> l);
+	PRINT organizationList;
+	
+	FOREACH (patient, pLocation) IN @@patientLocationMap DO
+	  FOREACH (organization, oLocation) IN @@organizationLocationMap DO
+	      PRINT "Patient " + patient + " is " + to_string(HaversineDistance( @@patientLocationMap.get(patient), @@organizationLocationMap.get(organization) ) ) + " miles away from " + organization + ".";
+	  END;
+	END;
+}
+
+INSTALL QUERY PatientQueryExample
+
+INSTALL QUERY PatientsWhoseLastNameBeginsWithL
+
+INSTALL QUERY PatientVisitsByDate
+
+INSTALL QUERY PatientVisitsByProvider
+
+INSTALL QUERY VertexDegreeExample
+
+INSTALL QUERY PatientWithVisitsBetween
+
+INSTALL QUERY HaversineDistance
+
+INSTALL QUERY PatientsWithinDistanceOfOrganization
+
+INSTALL QUERY PatientLastNameRMinMaxDistance
+
+INSTALL QUERY Exercise6Query
+

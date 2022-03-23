@@ -1,0 +1,24 @@
+USE GRAPH Synthea
+
+RUN LOADING JOB loadAllergies USING f1="/home/tigergraph/Synthea-Medgraph/data/allergies copy.csv"
+RUN LOADING JOB loadAttributes USING f1="/home/tigergraph/Synthea-Medgraph/data/Notes tokenized copy.csv"
+RUN LOADING JOB loadCareplans USING f1="/home/tigergraph/Synthea-Medgraph/data/careplans copy.csv"
+RUN LOADING JOB loadConditions USING f1="/home/tigergraph/Synthea-Medgraph/data/conditions copy.csv"
+RUN LOADING JOB loadDevices USING f1="/home/tigergraph/Synthea-Medgraph/data/devices copy.csv"
+RUN LOADING JOB loadEncounters USING f1="/home/tigergraph/Synthea-Medgraph/data/encounters copy.csv"
+RUN LOADING JOB loadImaging USING f1="/home/tigergraph/Synthea-Medgraph/data/imaging_studies copy.csv"
+RUN LOADING JOB loadImmunizations USING f1="/home/tigergraph/Synthea-Medgraph/data/immunizations copy.csv"
+RUN LOADING JOB loadLocations USING f1="/home/tigergraph/Synthea-Medgraph/data/demographics copy.csv"
+RUN LOADING JOB loadMedications USING f1="/home/tigergraph/Synthea-Medgraph/data/medications copy.csv"
+RUN LOADING JOB loadObservations USING f1="/home/tigergraph/Synthea-Medgraph/data/observations copy.csv"
+RUN LOADING JOB loadOrganizations USING f1="/home/tigergraph/Synthea-Medgraph/data/organizations copy.csv"
+RUN LOADING JOB loadPatient USING f1="/home/tigergraph/Synthea-Medgraph/data/patients copy.csv"
+#RUN LOADING JOB loadPatientNotes USING f1="/home/tigergraph/Synthea-Medgraph/data/.csv"
+RUN LOADING JOB loadPatientSymptoms USING f1="/home/tigergraph/Synthea-Medgraph/data/normalizedSymptoms copy.csv"
+RUN LOADING JOB loadPayerTransitions USING f1="/home/tigergraph/Synthea-Medgraph/data/payer_transitions copy.csv"
+RUN LOADING JOB loadPayers USING f1="/home/tigergraph/Synthea-Medgraph/data/payers copy.csv"
+RUN LOADING JOB loadProcedures USING f1="/home/tigergraph/Synthea-Medgraph/data/procedures copy.csv"
+RUN LOADING JOB loadProviders USING f1="/home/tigergraph/Synthea-Medgraph/data/providers copy.csv"
+RUN LOADING JOB loadZips USING f1="/home/tigergraph/Synthea-Medgraph/data/zipcodes copy.csv"
+
+
